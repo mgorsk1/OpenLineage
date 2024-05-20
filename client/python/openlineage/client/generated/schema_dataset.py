@@ -5,37 +5,36 @@ from __future__ import annotations
 
 from typing import Optional
 
-from attr import define, field
 from openlineage.client.generated.base import DatasetFacet
-from openlineage.client.utils import RedactMixin
+from pydantic import BaseModel, Field
+from typing_extensions import Annotated
 
 
-@define
+class Model(BaseModel):
+    schema_: Annotated[Optional[SchemaDatasetFacet], Field(alias="schema")] = None
+
+
 class SchemaDatasetFacet(DatasetFacet):
-    fields: Optional[list[SchemaDatasetFacetFields]] = field(factory=list)  # type: ignore[assignment]
-    """The fields of the data source."""
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/facets/1-1-1/SchemaDatasetFacet.json#/$defs/SchemaDatasetFacet"
+    fields: Optional[list[SchemaDatasetFacetFields]] = None
+    """
+    The fields of the data source.
+    """
 
 
-@define
-class SchemaDatasetFacetFields(RedactMixin):
-    name: str
-    """The name of the field."""
-
-    type: Optional[str] = field(default=None)
-    """The type of the field."""
-
-    description: Optional[str] = field(default=None)
-    """The description of the field."""
-
-    fields: Optional[list[SchemaDatasetFacetFields]] = field(factory=list)  # type: ignore[assignment]
-    """Nested struct fields."""
-
-    @staticmethod
-    def _get_schema() -> str:
-        return (
-            "https://openlineage.io/spec/facets/1-1-1/SchemaDatasetFacet.json#/$defs/SchemaDatasetFacetFields"
-        )
+class SchemaDatasetFacetFields(BaseModel):
+    name: Annotated[str, Field(example="column1")]
+    """
+    The name of the field.
+    """
+    type: Annotated[Optional[str], Field(example="VARCHAR|INT|...")] = None
+    """
+    The type of the field.
+    """
+    description: Optional[str] = None
+    """
+    The description of the field.
+    """
+    fields: Optional[list[SchemaDatasetFacetFields]] = None
+    """
+    Nested struct fields.
+    """

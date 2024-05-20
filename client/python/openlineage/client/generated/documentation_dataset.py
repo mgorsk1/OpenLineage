@@ -3,15 +3,19 @@
 
 from __future__ import annotations
 
-from attr import define
+from typing import Optional
+
 from openlineage.client.generated.base import DatasetFacet
+from pydantic import BaseModel, Field
+from typing_extensions import Annotated
 
 
-@define
 class DocumentationDatasetFacet(DatasetFacet):
-    description: str
-    """The description of the dataset."""
+    description: Annotated[str, Field(example="canonical representation of entity Foo")]
+    """
+    The description of the dataset.
+    """
 
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/facets/1-0-1/DocumentationDatasetFacet.json#/$defs/DocumentationDatasetFacet"
+
+class Model(BaseModel):
+    documentation: Optional[DocumentationDatasetFacet] = None

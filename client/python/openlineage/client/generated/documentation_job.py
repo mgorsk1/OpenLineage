@@ -3,17 +3,18 @@
 
 from __future__ import annotations
 
-from attr import define
+from typing import Optional
+
 from openlineage.client.generated.base import JobFacet
+from pydantic import BaseModel
 
 
-@define
 class DocumentationJobFacet(JobFacet):
     description: str
-    """The description of the job."""
+    """
+    The description of the job.
+    """
 
-    @staticmethod
-    def _get_schema() -> str:
-        return (
-            "https://openlineage.io/spec/facets/1-0-1/DocumentationJobFacet.json#/$defs/DocumentationJobFacet"
-        )
+
+class Model(BaseModel):
+    documentation: Optional[DocumentationJobFacet] = None

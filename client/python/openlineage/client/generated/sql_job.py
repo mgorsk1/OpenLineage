@@ -3,14 +3,16 @@
 
 from __future__ import annotations
 
-from attr import define
+from typing import Optional
+
 from openlineage.client.generated.base import JobFacet
+from pydantic import BaseModel, Field
+from typing_extensions import Annotated
 
 
-@define
+class Model(BaseModel):
+    sql: Optional[SQLJobFacet] = None
+
+
 class SQLJobFacet(JobFacet):
-    query: str
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/facets/1-0-1/SQLJobFacet.json#/$defs/SQLJobFacet"
+    query: Annotated[str, Field(example="SELECT * FROM foo")]

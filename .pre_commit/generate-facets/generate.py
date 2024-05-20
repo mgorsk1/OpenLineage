@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 from __future__ import annotations
 
-import copy
+# import copy
 import json
 import logging
 import os
@@ -11,16 +11,14 @@ import pkgutil
 import re
 import shutil
 import tempfile
-from collections import defaultdict
+# from collections import defaultdict
 
 import click
 import jinja2
-import yaml
-from datamodel_code_generator import DataModelType, PythonVersion
-from datamodel_code_generator.imports import Import
-from datamodel_code_generator.model import get_data_model_types
+# import yaml
+from datamodel_code_generator import PythonVersion
 from datamodel_code_generator.parser.jsonschema import JsonSchemaParser
-from datamodel_code_generator.types import Types
+# from datamodel_code_generator.types import Types
 
 log = logging.getLogger(__name__)
 
@@ -34,14 +32,14 @@ def camel_to_snake(string: str) -> str:
 
 
 # import attrs instead of dataclass
-DATA_MODELS_TYPES = get_data_model_types(
-    DataModelType.DataclassesDataclass, target_python_version=PythonVersion.PY_38
-)
-NEW_MODEL = DATA_MODELS_TYPES.data_model
-NEW_MODEL.DEFAULT_IMPORTS = (
-    Import.from_full_path("attr.define"),
-    Import.from_full_path("attr.field"),
-)
+# DATA_MODELS_TYPES = get_data_model_types(
+#     DataModelType.DataclassesDataclass, target_python_version=PythonVersion.PY_38
+# )
+# NEW_MODEL = DATA_MODELS_TYPES.data_model
+# NEW_MODEL.DEFAULT_IMPORTS = (
+#     Import.from_full_path("attr.define"),
+#     Import.from_full_path("attr.field"),
+# )
 
 # locations definitions
 FILE_LOCATION = pathlib.Path(__file__).resolve().parent
@@ -53,47 +51,47 @@ TEMPLATES_LOCATION = FILE_LOCATION / "templates"
 PYTHON_CLIENT_LOCATION = PARENT_LOCATION / "client" / "python"
 
 # custom code
-SET_PRODUCER_CODE = """
-PRODUCER = DEFAULT_PRODUCER
-
-def set_producer(producer: str) -> None:
-    global PRODUCER  # noqa: PLW0603
-    PRODUCER = producer
-"""
+# SET_PRODUCER_CODE = """
+# PRODUCER = DEFAULT_PRODUCER
+#
+# def set_producer(producer: str) -> None:
+#     global PRODUCER  # noqa: PLW0603
+#     PRODUCER = producer
+# """
 
 HEADER = (FILE_LOCATION / "header.py").resolve().read_text()
 
 # structures to customize code generation
-REDACT_FIELDS = yaml.safe_load((PYTHON_CLIENT_LOCATION / "redact_fields.yml").read_text())
+# REDACT_FIELDS = yaml.safe_load((PYTHON_CLIENT_LOCATION / "redact_fields.yml").read_text())
 SCHEMA_URLS = {}
 BASE_IDS = {}
 
 
-def get_redact_fields(module_name):
-    module_entry = next((entry for entry in REDACT_FIELDS if entry == module_name), None)
-    if not module_entry:
-        msg = f"{module_name} should be present in redact_fields"
-        raise ValueError(msg)
-    return {class_name: {"redact_fields": fields} for class_name, fields in module_entry}
+# def get_redact_fields(module_name):
+#     module_entry = next((entry for entry in REDACT_FIELDS if entry == module_name), None)
+#     if not module_entry:
+#         msg = f"{module_name} should be present in redact_fields"
+#         raise ValueError(msg)
+#     return {class_name: {"redact_fields": fields} for class_name, fields in module_entry}
 
 
-def deep_merge_dicts(dict1, dict2):
-    """Deep merges two dictionaries.
-
-    This function merges two dictionaries while handling nested dictionaries.
-    For keys that exist in both dictionaries, the values from dict2 take precedence.
-    If a key exists in both dictionaries and the values are dictionaries themselves,
-    they are merged recursively.
-    This function merges only dictionaries. If key is of different type, e.g. list
-    it does not work properly.
-    """
-    merged = dict1.copy()
-    for k, v in dict2.items():
-        if k in merged and isinstance(v, dict):
-            merged[k] = deep_merge_dicts(merged.get(k, {}), v)
-        else:
-            merged[k] = v
-    return merged
+# def deep_merge_dicts(dict1, dict2):
+#     """Deep merges two dictionaries.
+#
+#     This function merges two dictionaries while handling nested dictionaries.
+#     For keys that exist in both dictionaries, the values from dict2 take precedence.
+#     If a key exists in both dictionaries and the values are dictionaries themselves,
+#     they are merged recursively.
+#     This function merges only dictionaries. If key is of different type, e.g. list
+#     it does not work properly.
+#     """
+#     merged = dict1.copy()
+#     for k, v in dict2.items():
+#         if k in merged and isinstance(v, dict):
+#             merged[k] = deep_merge_dicts(merged.get(k, {}), v)
+#         else:
+#             merged[k] = v
+#     return merged
 
 
 def load_specs(base_spec_location: pathlib.Path, facets_spec_location: pathlib.Path) -> list[pathlib.Path]:
@@ -128,18 +126,16 @@ def parse_additional_data(spec, file_name):
 def parse_and_generate(locations):
     """Parse and generate data models from a given specification."""
 
-    extra_schema_urls = {obj_name: {"_schemaURL": schema_url} for obj_name, schema_url in SCHEMA_URLS.items()}
+    # extra_redact_fields = defaultdict(lambda: {"redactions": []})
 
-    extra_redact_fields = defaultdict(lambda: {"redactions": []})
-
-    for module_entry in REDACT_FIELDS:
-        for clazz in module_entry["classes"]:
-            class_name = clazz["class_name"]
-            # defaultdict automatically creates the key-value pair if not found
-            extra_redact_fields[class_name]["redactions"].append({
-                "fields": clazz["redact_fields"],
-                "module_name": module_entry["module"],
-            })
+    # for module_entry in REDACT_FIELDS:
+    #     for clazz in module_entry["classes"]:
+    #         class_name = clazz["class_name"]
+    #         # defaultdict automatically creates the key-value pair if not found
+    #         extra_redact_fields[class_name]["redactions"].append({
+    #             "fields": clazz["redact_fields"],
+    #             "module_name": module_entry["module"],
+    #         })
 
     temporary_locations = []
     with tempfile.TemporaryDirectory() as tmp:
@@ -150,42 +146,22 @@ def parse_and_generate(locations):
             temporary_locations.append(tmp_location)
 
         os.chdir(tmp_directory)
+
         # first parse OpenLineage.json
         parser = JsonSchemaParser(
             source=temporary_locations[:1],
-            data_model_type=NEW_MODEL,
-            data_model_root_type=DATA_MODELS_TYPES.root_model,
-            data_model_field_type=DATA_MODELS_TYPES.field_model,
-            data_type_manager_type=DATA_MODELS_TYPES.data_type_manager,
-            dump_resolve_reference_action=DATA_MODELS_TYPES.dump_resolve_reference_action,
-            special_field_name_prefix="",
-            use_schema_description=True,
-            field_constraints=True,
-            use_union_operator=False,
-            use_standard_collections=True,
-            base_class="openlineage.client.utils.RedactMixin",
-            class_name="ClassToBeSkipped",
+            use_annotated=True,
             use_field_description=True,
+            target_python_version=PythonVersion.PY_38,
+            wrap_string_literal=True,
+            use_schema_description=False,
+            field_constraints=True,
+            use_standard_collections=True,
             use_double_quotes=True,
             keep_model_order=True,
-            custom_template_dir=TEMPLATES_LOCATION,
-            extra_template_data=defaultdict(dict, deep_merge_dicts(extra_redact_fields, extra_schema_urls)),
-            additional_imports=["typing.ClassVar", "openlineage.client.constants.DEFAULT_PRODUCER"],
+            special_field_name_prefix="",
+
         )
-
-        # keep information about uuid and date-time formats
-        # this is going to be changed back to str type hint in jinja template
-        uuid_type = copy.deepcopy(parser.data_type_manager.type_map[Types.uuid])
-        uuid_type.type = "uuid"
-        parser.data_type_manager.type_map[Types.uuid] = uuid_type
-
-        date_time_type = copy.deepcopy(parser.data_type_manager.type_map[Types.date_time])
-        date_time_type.type = "date-time"
-        parser.data_type_manager.type_map[Types.date_time] = date_time_type
-
-        uri_type = copy.deepcopy(parser.data_type_manager.type_map[Types.date_time])
-        uri_type.type = "uri"
-        parser.data_type_manager.type_map[Types.uri] = uri_type
 
         parser.parse(format_=False)
 
@@ -214,6 +190,7 @@ def generate_facet_v2_module(module_location):
     format_and_save_output(
         output=output, location=PYTHON_CLIENT_LOCATION / "openlineage" / "client" / "facet_v2.py"
     )
+
 def separate_imports(code):
   """Separates a Python script code (as string) into imports and the rest."""
   imports_section = []
@@ -244,8 +221,6 @@ def format_and_save_output(output: str, location: pathlib.Path, add_set_producer
         output = output.replace("from .OpenLineage", "from openlineage.client.generated.base")
         imports_section, rest_of_code = separate_imports(output)
         tmpfile.write(imports_section)
-        if add_set_producer_code:
-            tmpfile.write(SET_PRODUCER_CODE)
         tmpfile.write(rest_of_code)
         tmpfile.flush()
 

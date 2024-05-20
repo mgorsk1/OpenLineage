@@ -5,21 +5,25 @@ from __future__ import annotations
 
 from typing import Optional
 
-from attr import define, field
 from openlineage.client.generated.base import RunFacet
+from pydantic import BaseModel, Field
+from typing_extensions import Annotated
 
 
-@define
+class Model(BaseModel):
+    processing_engine: Optional[ProcessingEngineRunFacet] = None
+
+
 class ProcessingEngineRunFacet(RunFacet):
-    version: str
-    """Processing engine version. Might be Airflow or Spark version."""
-
-    name: Optional[str] = field(default=None)
-    """Processing engine name, e.g. Airflow or Spark"""
-
-    openlineageAdapterVersion: Optional[str] = field(default=None)  # noqa: N815
-    """OpenLineage adapter package version. Might be e.g. OpenLineage Airflow integration package version"""
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/facets/1-1-1/ProcessingEngineRunFacet.json#/$defs/ProcessingEngineRunFacet"
+    version: Annotated[str, Field(example="2.5.0")]
+    """
+    Processing engine version. Might be Airflow or Spark version.
+    """
+    name: Annotated[Optional[str], Field(example="Airflow")] = None
+    """
+    Processing engine name, e.g. Airflow or Spark
+    """
+    openlineageAdapterVersion: Annotated[Optional[str], Field(example="0.19.0")] = None
+    """
+    OpenLineage adapter package version. Might be e.g. OpenLineage Airflow integration package version
+    """

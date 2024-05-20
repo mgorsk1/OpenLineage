@@ -5,21 +5,25 @@ from __future__ import annotations
 
 from typing import Optional
 
-from attr import define, field
 from openlineage.client.generated.base import JobFacet
+from pydantic import BaseModel, Field
+from typing_extensions import Annotated
 
 
-@define
 class JobTypeJobFacet(JobFacet):
-    processingType: str  # noqa: N815
-    """Job processing type like: BATCH or STREAMING"""
+    processingType: Annotated[str, Field(example="BATCH")]
+    """
+    Job processing type like: BATCH or STREAMING
+    """
+    integration: Annotated[str, Field(example="SPARK")]
+    """
+    OpenLineage integration type of this job: SPARK|DBT|AIRFLOW|FLINK
+    """
+    jobType: Annotated[Optional[str], Field(example="QUERY")] = None
+    """
+    Run type like: QUERY|COMMAND|DAG|TASK|JOB|MODEL
+    """
 
-    integration: str
-    """OpenLineage integration type of this job: SPARK|DBT|AIRFLOW|FLINK"""
 
-    jobType: Optional[str] = field(default=None)  # noqa: N815
-    """Run type like: QUERY|COMMAND|DAG|TASK|JOB|MODEL"""
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/facets/2-0-2/JobTypeJobFacet.json#/$defs/JobTypeJobFacet"
+class Model(BaseModel):
+    jobType: Optional[JobTypeJobFacet] = None

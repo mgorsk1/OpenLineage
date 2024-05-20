@@ -3,27 +3,16 @@
 
 from __future__ import annotations
 
-from typing import ClassVar, Optional
+from typing import Optional
 
-from attr import define, field
 from openlineage.client.generated.base import DatasetFacet
+from pydantic import AnyUrl, BaseModel
 
 
-@define
 class DatasourceDatasetFacet(DatasetFacet):
-    name: Optional[str] = field(default=None)
-    uri: Optional[str] = field(default=None)
-    _additional_skip_redact: ClassVar[list[str]] = ["name", "uri"]
+    name: Optional[str] = None
+    uri: Optional[AnyUrl] = None
 
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/facets/1-0-1/DatasourceDatasetFacet.json#/$defs/DatasourceDatasetFacet"
 
-    @uri.validator
-    def uri_check(self, attribute: str, value: str) -> None:  # noqa: ARG002
-        from urllib.parse import urlparse
-
-        result = urlparse(value)
-        if value and not all([result.scheme, result.netloc]):
-            msg = "uri is not a valid URI"
-            raise ValueError(msg)
+class Model(BaseModel):
+    dataSource: Optional[DatasourceDatasetFacet] = None

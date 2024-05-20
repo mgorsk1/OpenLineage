@@ -3,15 +3,18 @@
 
 from __future__ import annotations
 
-from attr import define
+from typing import Optional
+
 from openlineage.client.generated.base import DatasetFacet
+from pydantic import BaseModel
 
 
-@define
 class DatasetVersionDatasetFacet(DatasetFacet):
-    datasetVersion: str  # noqa: N815
-    """The version of the dataset."""
+    datasetVersion: str
+    """
+    The version of the dataset.
+    """
 
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/facets/1-0-1/DatasetVersionDatasetFacet.json#/$defs/DatasetVersionDatasetFacet"
+
+class Model(BaseModel):
+    version: Optional[DatasetVersionDatasetFacet] = None

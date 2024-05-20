@@ -5,42 +5,40 @@ from __future__ import annotations
 
 from typing import Optional
 
-from attr import define, field
 from openlineage.client.generated.base import RunFacet
-from openlineage.client.utils import RedactMixin
+from pydantic import BaseModel
 
 
-@define
-class Error(RedactMixin):
-    errorMessage: str  # noqa: N815
-    """Text representation of extraction error message."""
-
-    stackTrace: Optional[str] = field(default=None)  # noqa: N815
-    """Stack trace of extraction error message"""
-
-    task: Optional[str] = field(default=None)
+class Error(BaseModel):
+    errorMessage: str
     """
-    Text representation of task that failed. This can be, for example, SQL statement that parser could
-    not interpret.
+    Text representation of extraction error message.
     """
-    taskNumber: Optional[int] = field(default=None)  # noqa: N815
-    """Order of task (counted from 0)."""
+    stackTrace: Optional[str] = None
+    """
+    Stack trace of extraction error message
+    """
+    task: Optional[str] = None
+    """
+    Text representation of task that failed. This can be, for example, SQL statement that parser could not interpret.
+    """
+    taskNumber: Optional[int] = None
+    """
+    Order of task (counted from 0).
+    """
 
 
-@define
 class ExtractionErrorRunFacet(RunFacet):
-    totalTasks: int  # noqa: N815
+    totalTasks: int
     """
-    The number of distinguishable tasks in a run that were processed by OpenLineage, whether
-    successfully or not. Those could be, for example, distinct SQL statements.
+    The number of distinguishable tasks in a run that were processed by OpenLineage, whether successfully or not. Those could be, for example, distinct SQL statements.
     """
-    failedTasks: int  # noqa: N815
+    failedTasks: int
     """
-    The number of distinguishable tasks in a run that were processed not successfully by OpenLineage.
-    Those could be, for example, distinct SQL statements.
+    The number of distinguishable tasks in a run that were processed not successfully by OpenLineage. Those could be, for example, distinct SQL statements.
     """
     errors: list[Error]
 
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/facets/1-1-2/ExtractionErrorRunFacet.json#/$defs/ExtractionErrorRunFacet"
+
+class Model(BaseModel):
+    extractionError: Optional[ExtractionErrorRunFacet] = None

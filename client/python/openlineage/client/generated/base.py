@@ -3,164 +3,77 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from enum import Enum
-from typing import ClassVar, Optional
+from typing import Optional
+from uuid import UUID
 
-from attr import define, field
-from openlineage.client.constants import DEFAULT_PRODUCER
-from openlineage.client.utils import RedactMixin
-
-PRODUCER = DEFAULT_PRODUCER
+from pydantic import AnyUrl, BaseModel, Extra, Field
+from typing_extensions import Annotated
 
 
-def set_producer(producer: str) -> None:
-    global PRODUCER  # noqa: PLW0603
-    PRODUCER = producer
+class BaseEvent(BaseModel):
+    eventTime: datetime
+    """
+    the time the event occurred at
+    """
+    producer: Annotated[
+        AnyUrl, Field(example="https://github.com/OpenLineage/OpenLineage/blob/v1-0-0/client")
+    ]
+    """
+    URI identifying the producer of this metadata. For example this could be a git url with a given tag or sha
+    """
+    schemaURL: Annotated[AnyUrl, Field(example="https://openlineage.io/spec/0-0-1/OpenLineage.json")]
+    """
+    The JSON Pointer (https://tools.ietf.org/html/rfc6901) URL to the corresponding version of the schema definition for this RunEvent
+    """
 
 
-@define(kw_only=True)
-class BaseEvent(RedactMixin):
-    eventTime: str = field()  # noqa: N815
-    """the time the event occurred at"""
+class BaseFacet(BaseModel):
+    class Config:
+        extra = Extra.allow
 
-    producer: str = field(default="", kw_only=True)
-    schemaURL: str = field(  # noqa: N815
-        default="https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/BaseEvent", kw_only=True
-    )
-    _base_skip_redact: ClassVar[list[str]] = ["producer", "schemaURL"]
-    _additional_skip_redact: ClassVar[list[str]] = []
-
-    def __attrs_post_init__(self) -> None:
-        if not self.producer:
-            self.producer = PRODUCER
-        self.schemaURL = self._get_schema()
-
-    @property
-    def skip_redact(self) -> list[str]:
-        return self._base_skip_redact + self._additional_skip_redact
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/BaseEvent"
-
-    @eventTime.validator
-    def eventtime_check(self, attribute: str, value: str) -> None:  # noqa: ARG002
-        from dateutil import parser
-
-        parser.isoparse(value)
-        if "t" not in value.lower():
-            # make sure date-time contains time
-            msg = f"Parsed date-time has to contain time: {value}"
-            raise ValueError(msg)
-
-    @producer.validator
-    def producer_check(self, attribute: str, value: str) -> None:  # noqa: ARG002
-        from urllib.parse import urlparse
-
-        result = urlparse(value)
-        if value and not all([result.scheme, result.netloc]):
-            msg = "producer is not a valid URI"
-            raise ValueError(msg)
-
-    @schemaURL.validator
-    def schemaurl_check(self, attribute: str, value: str) -> None:  # noqa: ARG002
-        from urllib.parse import urlparse
-
-        result = urlparse(value)
-        if value and not all([result.scheme, result.netloc]):
-            msg = "schemaURL is not a valid URI"
-            raise ValueError(msg)
+    _producer: Annotated[
+        AnyUrl, Field(example="https://github.com/OpenLineage/OpenLineage/blob/v1-0-0/client")
+    ]
+    """
+    URI identifying the producer of this metadata. For example this could be a git url with a given tag or sha
+    """
+    _schemaURL: Annotated[
+        AnyUrl, Field(example="https://openlineage.io/spec/1-0-2/OpenLineage.json#/$defs/BaseFacet")
+    ]
+    """
+    The JSON Pointer (https://tools.ietf.org/html/rfc6901) URL to the corresponding version of the schema definition for this facet
+    """
 
 
-@define
-class BaseFacet(RedactMixin):
-    """all fields of the base facet are prefixed with _ to avoid name conflicts in facets"""
-
-    _producer: str = field(default="", kw_only=True)
-    _schemaURL: str = field(  # noqa: N815
-        default="https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/BaseFacet", kw_only=True
-    )
-    _base_skip_redact: ClassVar[list[str]] = ["_producer", "_schemaURL"]
-    _additional_skip_redact: ClassVar[list[str]] = []
-
-    def __attrs_post_init__(self) -> None:
-        if not self._producer:
-            self._producer = PRODUCER
-        self._schemaURL = self._get_schema()
-
-    @property
-    def skip_redact(self) -> list[str]:
-        return self._base_skip_redact + self._additional_skip_redact
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/BaseFacet"
-
-    @_producer.validator
-    def _producer_check(self, attribute: str, value: str) -> None:  # noqa: ARG002
-        from urllib.parse import urlparse
-
-        result = urlparse(value)
-        if value and not all([result.scheme, result.netloc]):
-            msg = "_producer is not a valid URI"
-            raise ValueError(msg)
-
-    @_schemaURL.validator
-    def _schemaurl_check(self, attribute: str, value: str) -> None:  # noqa: ARG002
-        from urllib.parse import urlparse
-
-        result = urlparse(value)
-        if value and not all([result.scheme, result.netloc]):
-            msg = "_schemaURL is not a valid URI"
-            raise ValueError(msg)
+class Dataset(BaseModel):
+    namespace: Annotated[str, Field(example="my-datasource-namespace")]
+    """
+    The namespace containing that dataset
+    """
+    name: Annotated[str, Field(example="instance.schema.table")]
+    """
+    The unique name for that dataset within that namespace
+    """
+    facets: Optional[dict[str, DatasetFacet]] = None
+    """
+    The facets for this dataset
+    """
 
 
-@define
-class Dataset(RedactMixin):
-    namespace: str
-    """The namespace containing that dataset"""
-
-    name: str
-    """The unique name for that dataset within that namespace"""
-
-    facets: Optional[dict[str, DatasetFacet]] = field(factory=dict, kw_only=True)  # type: ignore[assignment]
-    """The facets for this dataset"""
-
-    _skip_redact: ClassVar[list[str]] = ["namespace", "name"]
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/Dataset"
-
-
-@define(kw_only=True)
 class DatasetEvent(BaseEvent):
     dataset: StaticDataset
 
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/DatasetEvent"
 
-
-@define
 class DatasetFacet(BaseFacet):
-    """A Dataset Facet"""
-
-    _deleted: Optional[bool] = field(default=None, kw_only=True)
-    """set to true to delete a facet"""
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/DatasetFacet"
+    _deleted: Optional[bool] = None
+    """
+    set to true to delete a facet
+    """
 
 
 class EventType(Enum):
-    """
-    the current transition of the run state. It is required to issue 1 START event and 1 of [ COMPLETE,
-    ABORT, FAIL ] event per run. Additional events with OTHER eventType can be added to the same run.
-    For example to send additional metadata after the run is complete
-    """
-
     START = "START"
     RUNNING = "RUNNING"
     COMPLETE = "COMPLETE"
@@ -169,153 +82,93 @@ class EventType(Enum):
     OTHER = "OTHER"
 
 
-@define
 class InputDataset(Dataset):
-    """An input dataset"""
-
-    inputFacets: Optional[dict[str, InputDatasetFacet]] = field(factory=dict)  # type: ignore[assignment]# noqa: N815
-    """The input facets for this dataset."""
-
-    _additional_skip_redact: ClassVar[list[str]] = ["namespace", "name"]
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/InputDataset"
+    inputFacets: Optional[dict[str, InputDatasetFacet]] = None
+    """
+    The input facets for this dataset.
+    """
 
 
-@define
 class InputDatasetFacet(BaseFacet):
-    """An Input Dataset Facet"""
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/InputDatasetFacet"
+    pass
 
 
-@define
-class Job(RedactMixin):
-    namespace: str
-    """The namespace containing that job"""
-
-    name: str
-    """The unique name for that job within that namespace"""
-
-    facets: Optional[dict[str, JobFacet]] = field(factory=dict)  # type: ignore[assignment]
-    """The job facets."""
-
-    _skip_redact: ClassVar[list[str]] = ["namespace", "name"]
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/Job"
+class Job(BaseModel):
+    namespace: Annotated[str, Field(example="my-scheduler-namespace")]
+    """
+    The namespace containing that job
+    """
+    name: Annotated[str, Field(example="myjob.mytask")]
+    """
+    The unique name for that job within that namespace
+    """
+    facets: Optional[dict[str, JobFacet]] = None
+    """
+    The job facets.
+    """
 
 
-@define(kw_only=True)
 class JobEvent(BaseEvent):
     job: Job
-    inputs: Optional[list[InputDataset]] = field(factory=list)  # type: ignore[assignment]
-    """The set of **input** datasets."""
+    inputs: Optional[list[InputDataset]] = None
+    """
+    The set of **input** datasets.
+    """
+    outputs: Optional[list[OutputDataset]] = None
+    """
+    The set of **output** datasets.
+    """
 
-    outputs: Optional[list[OutputDataset]] = field(factory=list)  # type: ignore[assignment]
-    """The set of **output** datasets."""
 
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/JobEvent"
-
-
-@define
 class JobFacet(BaseFacet):
-    """A Job Facet"""
-
-    _deleted: Optional[bool] = field(default=None, kw_only=True)
-    """set to true to delete a facet"""
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/JobFacet"
+    _deleted: Optional[bool] = None
+    """
+    set to true to delete a facet
+    """
 
 
-@define
 class OutputDataset(Dataset):
-    """An output dataset"""
-
-    outputFacets: Optional[dict[str, OutputDatasetFacet]] = field(factory=dict)  # type: ignore[assignment]# noqa: N815
-    """The output facets for this dataset"""
-
-    _additional_skip_redact: ClassVar[list[str]] = ["namespace", "name"]
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/OutputDataset"
+    outputFacets: Optional[dict[str, OutputDatasetFacet]] = None
+    """
+    The output facets for this dataset
+    """
 
 
-@define
 class OutputDatasetFacet(BaseFacet):
-    """An Output Dataset Facet"""
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/OutputDatasetFacet"
+    pass
 
 
-@define
-class Run(RedactMixin):
-    runId: str = field()  # noqa: N815
-    """The globally unique ID of the run associated with the job."""
-
-    facets: Optional[dict[str, RunFacet]] = field(factory=dict)  # type: ignore[assignment]
-    """The run facets."""
-
-    _skip_redact: ClassVar[list[str]] = ["runId"]
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/Run"
-
-    @runId.validator
-    def runid_check(self, attribute: str, value: str) -> None:  # noqa: ARG002
-        from uuid import UUID
-
-        UUID(value)
+class Run(BaseModel):
+    runId: UUID
+    """
+    The globally unique ID of the run associated with the job.
+    """
+    facets: Optional[dict[str, RunFacet]] = None
+    """
+    The run facets.
+    """
 
 
-@define(kw_only=True)
 class RunEvent(BaseEvent):
+    eventType: Annotated[Optional[EventType], Field(example="START|RUNNING|COMPLETE|ABORT|FAIL|OTHER")] = None
+    """
+    the current transition of the run state. It is required to issue 1 START event and 1 of [ COMPLETE, ABORT, FAIL ] event per run. Additional events with OTHER eventType can be added to the same run. For example to send additional metadata after the run is complete
+    """
     run: Run
     job: Job
-    eventType: Optional[EventType] = field(default=None)  # noqa: N815
+    inputs: Optional[list[InputDataset]] = None
     """
-    the current transition of the run state. It is required to issue 1 START event and 1 of [ COMPLETE,
-    ABORT, FAIL ] event per run. Additional events with OTHER eventType can be added to the same run.
-    For example to send additional metadata after the run is complete
+    The set of **input** datasets.
     """
-    inputs: Optional[list[InputDataset]] = field(factory=list)  # type: ignore[assignment]
-    """The set of **input** datasets."""
-
-    outputs: Optional[list[OutputDataset]] = field(factory=list)  # type: ignore[assignment]
-    """The set of **output** datasets."""
-
-    _additional_skip_redact: ClassVar[list[str]] = ["eventType", "eventTime"]
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/RunEvent"
+    outputs: Optional[list[OutputDataset]] = None
+    """
+    The set of **output** datasets.
+    """
 
 
-@define
 class RunFacet(BaseFacet):
-    """A Run Facet"""
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/RunFacet"
+    pass
 
 
-@define
 class StaticDataset(Dataset):
-    """A Dataset sent within static metadata events"""
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/2-0-2/OpenLineage.json#/$defs/StaticDataset"
+    pass

@@ -5,29 +5,29 @@ from __future__ import annotations
 
 from typing import Optional
 
-from attr import define, field
 from openlineage.client.generated.base import DatasetFacet
-from openlineage.client.utils import RedactMixin
+from pydantic import BaseModel, Field
+from typing_extensions import Annotated
 
 
-@define
-class Identifier(RedactMixin):
+class Identifier(BaseModel):
     namespace: str
-    """The dataset namespace"""
-
+    """
+    The dataset namespace
+    """
     name: str
-    """The dataset name"""
+    """
+    The dataset name
+    """
+    type: Annotated[str, Field(example="table")]
+    """
+    Identifier type
+    """
 
-    type: str
-    """Identifier type"""
+
+class Model(BaseModel):
+    symlinks: Optional[SymlinksDatasetFacet] = None
 
 
-@define
 class SymlinksDatasetFacet(DatasetFacet):
-    identifiers: Optional[list[Identifier]] = field(factory=list)  # type: ignore[assignment]
-
-    @staticmethod
-    def _get_schema() -> str:
-        return (
-            "https://openlineage.io/spec/facets/1-0-1/SymlinksDatasetFacet.json#/$defs/SymlinksDatasetFacet"
-        )
+    identifiers: Optional[list[Identifier]] = None
