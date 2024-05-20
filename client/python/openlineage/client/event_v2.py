@@ -3,7 +3,6 @@
 
 
 from openlineage.client.generated.base import (
-    PRODUCER,
     BaseEvent,
     Dataset,
     DatasetEvent,
@@ -13,7 +12,6 @@ from openlineage.client.generated.base import (
     OutputDataset,
     Run,
     RunEvent,
-    set_producer,
 )
 from openlineage.client.generated.base import (
     EventType as RunState,
@@ -30,6 +28,4 @@ __all__ = [
     "OutputDataset",
     "Run",
     "Job",
-    "PRODUCER",
-    "set_producer",
 ]

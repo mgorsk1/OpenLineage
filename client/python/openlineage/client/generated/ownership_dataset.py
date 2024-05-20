@@ -5,29 +5,28 @@ from __future__ import annotations
 
 from typing import Optional
 
-from attr import define, field
 from openlineage.client.generated.base import DatasetFacet
-from openlineage.client.utils import RedactMixin
+from pydantic import BaseModel, Field
+from typing_extensions import Annotated
 
 
-@define
-class Owner(RedactMixin):
-    name: str
+class Model(BaseModel):
+    ownership: Optional[OwnershipDatasetFacet] = None
+
+
+class Owner(BaseModel):
+    name: Annotated[str, Field(example="application:app_name")]
     """
-    the identifier of the owner of the Dataset. It is recommended to define this as a URN. For example
-    application:foo, user:jdoe, team:data
+    the identifier of the owner of the Dataset. It is recommended to define this as a URN. For example application:foo, user:jdoe, team:data
     """
-    type: Optional[str] = field(default=None)
-    """The type of ownership (optional)"""
+    type: Annotated[Optional[str], Field(example="MAINTAINER")] = None
+    """
+    The type of ownership (optional)
+    """
 
 
-@define
 class OwnershipDatasetFacet(DatasetFacet):
-    owners: Optional[list[Owner]] = field(factory=list)  # type: ignore[assignment]
-    """The owners of the dataset."""
-
-    @staticmethod
-    def _get_schema() -> str:
-        return (
-            "https://openlineage.io/spec/facets/1-0-1/OwnershipDatasetFacet.json#/$defs/OwnershipDatasetFacet"
-        )
+    owners: Optional[list[Owner]] = None
+    """
+    The owners of the dataset.
+    """

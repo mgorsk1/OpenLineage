@@ -28,25 +28,21 @@ from openlineage.client.generated import (
     symlinks_dataset,
 )
 from openlineage.client.generated.base import (
-    PRODUCER,
     BaseFacet,
     DatasetFacet,
     InputDatasetFacet,
     JobFacet,
     OutputDatasetFacet,
     RunFacet,
-    set_producer,
 )
 
 __all__ = [
-    "PRODUCER",
     "BaseFacet",
     "DatasetFacet",
     "InputDatasetFacet",
     "JobFacet",
     "OutputDatasetFacet",
     "RunFacet",
-    "set_producer",
     "column_lineage_dataset",
     "data_quality_assertions_dataset",
     "data_quality_metrics_input_dataset",

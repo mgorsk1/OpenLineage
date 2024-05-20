@@ -3,33 +3,28 @@
 
 from __future__ import annotations
 
-from typing import ClassVar, Optional
+from typing import Optional
 
-from attr import define, field
 from openlineage.client.generated.base import InputDatasetFacet
-from openlineage.client.utils import RedactMixin
+from pydantic import BaseModel, Field
+from typing_extensions import Annotated
 
 
-@define
-class Assertion(RedactMixin):
-    assertion: str
-    """Type of expectation test that dataset is subjected to"""
-
+class Assertion(BaseModel):
+    assertion: Annotated[str, Field(example="not_null")]
+    """
+    Type of expectation test that dataset is subjected to
+    """
     success: bool
-    column: Optional[str] = field(default=None)
+    column: Annotated[Optional[str], Field(example="id")] = None
     """
-    Column that expectation is testing. It should match the name provided in SchemaDatasetFacet. If
-    column field is empty, then expectation refers to whole dataset.
+    Column that expectation is testing. It should match the name provided in SchemaDatasetFacet. If column field is empty, then expectation refers to whole dataset.
     """
-    _skip_redact: ClassVar[list[str]] = ["column"]
 
 
-@define
 class DataQualityAssertionsDatasetFacet(InputDatasetFacet):
-    """list of tests performed on dataset or dataset columns, and their results"""
-
     assertions: list[Assertion]
 
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/facets/1-0-1/DataQualityAssertionsDatasetFacet.json#/$defs/DataQualityAssertionsDatasetFacet"
+
+class Model(BaseModel):
+    dataQualityAssertions: Optional[DataQualityAssertionsDatasetFacet] = None

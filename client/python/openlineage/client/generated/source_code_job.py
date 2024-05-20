@@ -3,22 +3,22 @@
 
 from __future__ import annotations
 
-from typing import ClassVar
+from typing import Optional
 
-from attr import define
 from openlineage.client.generated.base import JobFacet
+from pydantic import BaseModel
 
 
-@define
+class Model(BaseModel):
+    sourceCode: Optional[SourceCodeJobFacet] = None
+
+
 class SourceCodeJobFacet(JobFacet):
     language: str
-    """Language in which source code of this job was written."""
-
-    sourceCode: str  # noqa: N815
-    """Source code of this job."""
-
-    _additional_skip_redact: ClassVar[list[str]] = ["language"]
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/facets/1-0-1/SourceCodeJobFacet.json#/$defs/SourceCodeJobFacet"
+    """
+    Language in which source code of this job was written.
+    """
+    sourceCode: str
+    """
+    Source code of this job.
+    """

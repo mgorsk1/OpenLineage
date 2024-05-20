@@ -3,25 +3,26 @@
 
 from __future__ import annotations
 
-from typing import ClassVar, Optional
+from typing import Optional
 
-from attr import define, field
 from openlineage.client.generated.base import OutputDatasetFacet
+from pydantic import BaseModel
 
 
-@define
+class Model(BaseModel):
+    outputStatistics: Optional[OutputStatisticsOutputDatasetFacet] = None
+
+
 class OutputStatisticsOutputDatasetFacet(OutputDatasetFacet):
-    rowCount: Optional[int] = field(default=None)  # noqa: N815
-    """The number of rows written to the dataset"""
-
-    size: Optional[int] = field(default=None)
-    """The size in bytes written to the dataset"""
-
-    fileCount: Optional[int] = field(default=None)  # noqa: N815
-    """The number of files written to the dataset"""
-
-    _additional_skip_redact: ClassVar[list[str]] = ["rowCount", "size"]
-
-    @staticmethod
-    def _get_schema() -> str:
-        return "https://openlineage.io/spec/facets/1-0-2/OutputStatisticsOutputDatasetFacet.json#/$defs/OutputStatisticsOutputDatasetFacet"
+    rowCount: Optional[int] = None
+    """
+    The number of rows written to the dataset
+    """
+    size: Optional[int] = None
+    """
+    The size in bytes written to the dataset
+    """
+    fileCount: Optional[int] = None
+    """
+    The number of files written to the dataset
+    """
